@@ -1,0 +1,69 @@
+---
+title: "HW2"
+author: "GuillermoSchneider"
+date: "2024-02-03"
+output: html_document
+---
+
+# Introduction
+
+### I brought 4 apples to work and asked my coworkers to rate them on tart/sweetness, mushy/crispness, and dry/juicyness. I stored it in a csv which i uploaded to MySQL database table and then loaded into R.
+
+**installing needed packages:**
+```{r}
+
+install.packages("RMySQL", repos='http://cran.us.r-project.org')
+
+library(RMySQL)
+```
+**connecting to MySQL:**
+```{r}
+mysqlconnection = dbConnect(RMySQL::MySQL(),
+                            dbname='new_schema',
+                            host='localhost',
+                            port=3306,
+                            user='root',
+                            password=rstudioapi::askForPassword())
+```
+
+**Load the information from the SQL database
+into an R dataframe:**
+
+```{r}
+apples = dbSendQuery(mysqlconnection, "select * from apples")
+data.frame = fetch(apples)
+apples <- data.frame
+print(apples) 
+```
+
+**changed the columns to numeric, changed missing to NA:**
+```{r}
+apples$`tart/sweet (1-10)` <- as.numeric(as.character(apples$`tart/sweet (1-10)`))
+apples$`mushy/crisp (1-10)`<- as.numeric(as.character(apples$`mushy/crisp (1-10)`))
+apples$`dry/juicy (1-10)`<- as.numeric(as.character(apples$`dry/juicy (1-10)`))
+
+```
+
+
+**I decided to replace all the missing values with the mean value for that apple and column so it shouldn't effect any summary metrics. My code is ugly, but it does what i want to replace those 2 NA's:**
+```{r}
+
+GoldRush <- subset(apples, APPLE == "Gold Rush")
+mean(GoldRush$`tart/sweet (1-10)`, na.rm = TRUE)
+
+CandyCrisp <- subset(apples, APPLE == "Candy Crisp")
+mean(CandyCrisp$`dry/juicy (1-10)`, na.rm = TRUE)
+
+apples$`tart/sweet (1-10)`[is.na(apples$`tart/sweet (1-10)`)] <- mean(GoldRush$`tart/sweet (1-10)`, na.rm = TRUE)
+
+apples$`dry/juicy (1-10)`[is.na(apples$`dry/juicy (1-10)`)] <- mean(CandyCrisp$`dry/juicy (1-10)`, na.rm = TRUE)
+```
+
+**tada! NA's gone:**
+```{r}
+print(apples) 
+```
+
+
+
+

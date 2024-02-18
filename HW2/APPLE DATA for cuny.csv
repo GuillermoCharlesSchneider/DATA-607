@@ -1,0 +1,21 @@
+PERSONID,APPLE,tart/sweet (1-10),mushy/crisp (1-10),dry/juicy (1-10)
+1,SUNCRISP,8,9,7
+1,MUTSU,9,9,8
+1,Gold Rush,,9,7
+1,Candy Crisp,6,5,8
+2,SUNCRISP,4,9,5
+2,MUTSU,8,7.5,8
+2,Gold Rush,9,4,8
+2,Candy Crisp,7,8,6
+3,SUNCRISP,4,9,8
+3,MUTSU,7,9,8
+3,Gold Rush,5,6,7
+3,Candy Crisp,4,6,8
+4,SUNCRISP,3,7,5
+4,MUTSU,6,7,7
+4,Gold Rush,5,5,8
+4,Candy Crisp,4,9,
+5,SUNCRISP,3,10,5
+5,MUTSU,4,7,7
+5,Gold Rush,10,5,8
+5,Candy Crisp,5,7,8

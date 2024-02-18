@@ -1,0 +1,79 @@
+---
+title: "HW3"
+output: html_document
+date: "2024-02-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. 
+**load majors data, and install tidyverse:**
+```{r}
+majors <- read.csv("majors-list.csv", header=TRUE, stringsAsFactors=FALSE)
+install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+library(tidyverse)
+```
+
+**majors that contain either "DATA" or "STATISTICS":**
+```{r}
+str_view(majors$Major, "DATA|STATISTICS")
+```
+
+## 2.
+**START:**
+```{r}
+x <-
+'[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+[13] "olive"        "salal berry"'
+```
+
+**transformations:**
+```{r}
+test <- str_remove_all(x, '\\d')
+test <- str_remove_all(test, '\\[')
+test <- str_remove_all(test, '\\]')
+test <- str_remove_all(test, '\\\\')
+test <- str_replace_all(test, '\\s+', "\\, ")
+test <- str_replace(test, '\\, ','c(')
+test <- str_c(test,')')
+test
+```
+**GOAL:**
+```{r}
+desiredOutput = 'c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")'
+desiredOutput
+```
+
+
+## 3. 
+
+    a. (.)\1\1 --  the same three characters like AAA
+    b. "(.)(.)\\2\\1" --  two characters and then reversed, like ABBA
+    c. (..)\1 -- group of two characters repeated, like ABAB
+    d. "(.).\\1.\\1" -- two characters, and then a third with the first on each side like "ABACA
+    e. "(.)(.)(.).*\\3\\2\\1" -- atleast three chars and ending reversed like "ABCXXXXXXCBA"
+    
+    
+## 4.
+
+**Start and end with the same character:**
+
+####    ^(.).*\1$
+
+
+**Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)**
+
+#### ([a-zA-Z][a-zA-Z]).*\1
+
+**Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)**
+
+#### ([a-zA-Z]).*\1.*\1
+  
+  
+  
+  
+  

@@ -1,0 +1,32 @@
+---
+title: "HW1"
+author: "GuillermoSchneider"
+date: "2024-02-02"
+output: html_document
+---
+
+
+# Introduction
+ 
+## https://fivethirtyeight.com/features/what-makes-our-new-2020-democratic-primary-polling-averages-different/
+
+ The article covers FiveThirtyEight’s democratic primary polling averages method in the 2020 election, and why they think they've created a better method. They adjust state polls based on trends in national polls, pollster bias and included pollster ratings weights, and finally putting more weight on polling changes after a major news event. 
+
+**Loaded the csv from github raw into data frame in r:**
+```{r}
+polling<-read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/HW1/main/pres_primary_avgs_1980-2016.csv", header= TRUE, sep=",")
+```
+
+**renamed columns:**
+```{r}
+colnames(polling) <- c("RaceYearAndParty", "State", "ModelDate","CandidateName","Candidate_ID","Estimate","Trend_Adjusted", "Timestamp", "OneDayTest", "Contest_Date")
+```
+
+**subset of just iowa polling:**
+```{r}
+IowaPolling <- subset(polling, State == "Iowa")
+```
+
+
+### Conclusion
+I successfully pulled in the data
