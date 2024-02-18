@@ -410,14 +410,14 @@ seperated$V10 &lt;- str_remove_all(seperated$V10, &quot;\\D&quot;)</code></pre>
 repeat for each rounds column:</strong></p>
 <pre class="r"><code>avg_scores &lt;- seperated
 
-#columns
+#columns, rounds 1-6
 for(j in 4:10){
-#rows
+#rows, all 64 players
 for (i in 1:64){
   if (!is.na(avg_scores[i,j]))
     {avg_scores[i,j] &lt;- avg_scores[as.numeric(avg_scores[i,j]),13]
   } else
-    avg_scores[i,j] &lt;- NA
+    avg_scores[i,j] &lt;- NA 
 }
 }</code></pre>
 <p><strong>row means:</strong></p>
