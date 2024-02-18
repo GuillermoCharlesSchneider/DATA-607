@@ -4,76 +4,106 @@ output: html_document
 date: "2024-02-18"
 ---
 
+### CHESS ELO
 
+**packages:**
 ```{r}
 #install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 library(tidyverse)
+library(dplyr)
+library(tidyr)
 ```
-remove the dashes
-combine every other row
 
 
-
-
-
+**read table from github:**
 ```{r}
-
-testing <- readLines("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-1/tournamentinfo.txt",warn=FALSE)
-testing <- str_remove_all(testing, '\\-')
-df2 = data.frame(values=testing,)
-
-
-my_data <- read.table(testing, sep ="|", fill = TRUE)
-
-
-
-
-
-
-
-
-
-
-
-
+#load it in
 my_data <- read.table("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-1/tournamentinfo.txt", sep ="|", fill = TRUE)
+
+```
+
+**cleaning:**
+```{r}
+# data frame, and 
 my_data <- data.frame(my_data[-1, ])
+#remove every third line to remove the dashes
 my_data <- my_data[-(seq(3,to=nrow(my_data),by=3)),]
+#remove the empty last column
 my_data <- my_data[-11]
+#remove header
 my_data <- data.frame(my_data[-(1:2), ])
 
+```
+
+**split into two, every other line, and remerge:**
+```{r}
 L <- my_data[-(seq(2,to=nrow(my_data),by=2)),]
 R <- my_data[-(seq(1,to=nrow(my_data),by=2)),]
-
 updated <- cbind(L, R)
-updated <- updated[-(13:20)]
-
-
-lines <- readLines("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-1/tournamentinfo.txt",warn=FALSE)
-
-df = data.frame(values=lines)
-df <- data.frame(df[-1, ])
-df <- data.frame(df[,])
-
-
-
-#,comment.char = "-"
-
-data <- read.delim("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-1/tournamentinfo.txt")
-
-#, sep="|", colClasses = c(NA, "NULL")
-
-
-
-data <- read_fwf()
-
-data
+updated <- updated[-(13:20)] #remove the W and B playing colors
 
 ```
 
-
+**clean pre and post, and remove the provisional scores, seperate on any nonalphanumeric:**
 ```{r}
-test <- str_remove_all(data, '\\-+')
+
+seperated <- updated %>% separate(12, c(NA, 'ID', NA,'Pre', 'Post'), extra="merge")
+seperated <- seperated %>% separate(13, sep = 'P', c('Pre', NA), extra="merge")
+seperated <- seperated %>% separate(14, sep = 'P', c('Post', NA), extra="merge")
 
 ```
+
+**remove W and L:**
+```{r}
+seperated$V4 <- str_remove_all(seperated$V4, "\\D")
+seperated$V5 <- str_remove_all(seperated$V5, "\\D")
+seperated$V6 <- str_remove_all(seperated$V6, "\\D")
+seperated$V7<- str_remove_all(seperated$V7, "\\D")
+seperated$V8 <- str_remove_all(seperated$V8, "\\D")
+seperated$V9 <- str_remove_all(seperated$V9, "\\D")
+seperated$V10 <- str_remove_all(seperated$V10, "\\D")
+
+```
+
+**FIND opps score. if  not NA, replace with the opps score, repeat for each rounds column:** 
+```{r}
+avg_scores <- seperated
+
+#columns, rounds 1-6
+for(j in 4:10){
+#rows, all 64 players
+for (i in 1:64){
+  if (!is.na(avg_scores[i,j]))
+    {avg_scores[i,j] <- avg_scores[as.numeric(avg_scores[i,j]),13]
+  } else
+    avg_scores[i,j] <- NA 
+}
+}
+
+```
+
+**row means:**
+```{r}
+#char to numeric
+avg_scores[, c(4:10)] <- sapply(avg_scores[, c(4:10)], as.numeric)
+
+#row means, ignore na, and round
+avg_scores$v15 <- rowMeans(avg_scores[,c(4:10)], na.rm=T)
+avg_scores$v15 <- round(avg_scores$v15)
+
+#grab just the columns we need
+final <- avg_scores[,c(2,11,3,13,15)]
+colnames(final) <- c("Player’s Name","Player’s State","Total Number of Points","Player’s Pre-Rating","Average Pre Chess Rating of Opponents")
+print(final[c(1:5),])
+```
+
+
+**CSV:*
+```{r}
+#csv
+write.csv(final, "chessELO.csv", row.names=FALSE)
+```
+
+
+
 
