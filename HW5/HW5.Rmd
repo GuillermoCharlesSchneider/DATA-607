@@ -1,0 +1,14 @@
+---
+title: "HW5"
+author: "GuillermoSchneider"
+date: "2024-02-23"
+output: html_document
+---
+
+# *Assignment – Tidying and Transforming Data*
+
+```{r}
+
+airlines <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW5/airlines.csv")
+
+```
