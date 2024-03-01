@@ -1,0 +1,40 @@
+---
+title: "Project 2"
+author: "GuillermoSchneider"
+date: "2024-03-01"
+output: html_document
+---
+
+## Project 2 
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+### **Load three wide datasets .CSV**
+
+ use tidyr and dplyr as needed to
+tidy and transform your data. [Most of your grade will be based on this step!]
+
+
+
+#### **Data Set 1**
+
+**Data Set 1 TIDYING (tidyr and dplyr):** 
+
+**Data Set 1 ANALYSIS**
+
+
+
+#### **Data Set 2**
+
+**Data Set 2 TIDYING (tidyr and dplyr):** 
+
+**Data Set 2 ANALYSIS**
+
+
+
+#### **Data Set 3**
+
+**Data Set 3 TIDYING (tidyr and dplyr):** 
+
+**Data Set 3 ANALYSIS**
+
