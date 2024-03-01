@@ -7,8 +7,78 @@ output: html_document
 
 # *Assignment – Tidying and Transforming Data*
 
-```{r}
 
+```{r}
+library(tidyr)
+library(dplyr)
+```
+
+**read in csv:**
+```{r}
 airlines <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW5/airlines.csv")
+airlines <- data.frame(airlines[-3, ])
+colnames(airlines)[1:2] <- c('airline','status')
+airlines[2,1] <- 'ALASKA'
+airlines[4,1] <- 'AM WEST'
+```
+
+
+**tidy and make it long rather than wide:**
+```{r}
+airlines2 <- airlines %>%
+  pivot_longer(
+    3:7,
+    names_to = "destinations", 
+    values_to = "occurances"
+  )
+
+
+#compare within destinations
+airlines2 %>% filter(status == "delayed")%>% arrange(destinations, desc(occurances))
+
+# most delayed
+airlines2 %>% filter(status == "delayed")%>% arrange(desc(occurances))
 
 ```
+
+## **Recommend flying AM WEST.** 
+**AM WEST (10.89%) has an overall slightly lower average percentage of delayed flights than ALASKA (13.27%) **
+```{r}
+#group  by airlines, then delay status
+airlines3 <- airlines2 |> 
+  group_by(airline,status) |> 
+  summarize(flights = sum(occurances), .groups = 'drop') 
+
+#add an additional column of delayed status number / total airlines flights
+airlines3 <-
+airlines3 |>  
+group_by(airline) %>% 
+mutate(percent = flights / sum(flights) * 100)
+
+print(airlines3)
+```
+
+## **airline recommendation by destination:**
+   **Los.Angeles -> AM WEST.** pretty similar delay rates, doesnt seem to matter much \
+   **Phoenix -> ALASKA.** huge advantage to ALASKA, but also a tiny sample size of 12 flights \
+   **San.Diego -> ALASKA.** blessed destination, least delays for either airline of all the destinations\
+   **San.Francisco -> AM WEST.** sightly better chance of no delays w/ AM WEST\
+   **Seattle -> AM WEST.** just asking for trouble if you fly ALASKA w/ 10x more delays\
+    
+```{r}
+#group  by airlines, then delay status
+airlines4 <- airlines2 
+
+#add an additional column of delayed status number / total airlines flights
+airlines4 <-
+airlines4 |>  
+  group_by(airline) %>% 
+  mutate(percent = occurances / sum(occurances) * 100)
+
+print(airlines4 %>% filter(status == "delayed") %>% arrange(destinations))
+
+
+```
+
+
+
