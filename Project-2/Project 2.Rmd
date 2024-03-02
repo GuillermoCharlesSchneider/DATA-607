@@ -5,7 +5,7 @@ date: "2024-03-01"
 output: html_document
 ---
 
-## Project 2 
+# Project 2 
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
@@ -14,9 +14,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
  use tidyr and dplyr as needed to
 tidy and transform your data. [Most of your grade will be based on this step!]
 
-
-
-#### **Data Set 1**
+## **Data Set 1 (CPI) **
 
 **Data Set 1 (CPI) Load:**
 ```{r}
@@ -30,7 +28,7 @@ CPI <- read.table("https://raw.githubusercontent.com/GuillermoCharlesSchneider/D
 
 
 
-#### **Data Set 2**
+## **Data Set 2 (Marriage)**
 
 **Data Set 2 (Marriage) Load:**
 
@@ -45,7 +43,7 @@ Marriage <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneide
 
 
 
-#### **Data Set 3**
+## **Data Set 3 (Sheds)**
 
 **Data Set 3 (Sheds) Load:**
 
