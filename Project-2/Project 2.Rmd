@@ -7,6 +7,14 @@ output: html_document
 
 # Project 2 
 
+**tidyr**
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+
+
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 ### **Load three wide datasets .CSV**
@@ -19,6 +27,44 @@ tidy and transform your data. [Most of your grade will be based on this step!]
 **Data Set 1 (CPI) Load:**
 ```{r}
 CPI <- read.table("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/CPI%202024.csv", sep =",")
+
+clean_CPI <- CPI %>%
+  filter(!CPI$V1=="")
+
+  colnames(clean_CPI) <- c(
+    "Indent Level",
+    "Expenditure category",
+    "Relative importance Dec. 2023",
+    "Unadjusted indexes Jan. 2023",
+    "Unadjusted indexes Dec. 2023",
+    "Unadjusted indexes Jan. 2024",
+    "Unadjusted percent change Jan. 2023- Jan. 2024",
+    "Unadjusted percent change Dec. 2023- Jan. 2024",
+    "Seasonally adjusted percent change Oct. 2023- Nov. 2023",
+    "Seasonally adjusted percent change Nov. 2023- Dec. 2023",
+    "Seasonally adjusted percent change Dec. 2023- Jan. 2024"
+    )
+
+clean_CPI <- data.frame(clean_CPI[-1, ])
+
+
+long_CPI <- clean_CPI %>%
+  pivot_longer(
+    3:11,
+    names_to = "indexes", 
+    values_to = "value"
+  )
+
+
+
+
+
+
+
+
+
+clean_data <- CPI[-c(1:6), ]
+CPI2 <- data.frame(CPI[-6, ])
 ```
 
 **Data Set 1 TIDYING (tidyr and dplyr):** 
