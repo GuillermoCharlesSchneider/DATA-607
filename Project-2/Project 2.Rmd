@@ -18,13 +18,26 @@ tidy and transform your data. [Most of your grade will be based on this step!]
 
 #### **Data Set 1**
 
+**Data Set 1 (CPI) Load:**
+```{r}
+CPI <- read.table("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/CPI%202024.csv", sep =",")
+```
+
 **Data Set 1 TIDYING (tidyr and dplyr):** 
+
 
 **Data Set 1 ANALYSIS**
 
 
 
 #### **Data Set 2**
+
+**Data Set 2 (Marriage) Load:**
+
+```{r}
+Marriage <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/Marriage.csv", sep =",")
+```
+
 
 **Data Set 2 TIDYING (tidyr and dplyr):** 
 
@@ -33,6 +46,12 @@ tidy and transform your data. [Most of your grade will be based on this step!]
 
 
 #### **Data Set 3**
+
+**Data Set 3 (Sheds) Load:**
+
+```{r}
+Sheds <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/Sheds.csv", sep =",")
+```
 
 **Data Set 3 TIDYING (tidyr and dplyr):** 
 
