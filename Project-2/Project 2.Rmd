@@ -11,6 +11,7 @@ output: html_document
 ```{r}
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 ```
 
 
@@ -26,10 +27,14 @@ tidy and transform your data. [Most of your grade will be based on this step!]
 
 **Data Set 1 (CPI) Load:**
 ```{r}
-CPI <- read.table("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/CPI%202024.csv", sep =",")
+CPI <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/CPI%202024.csv", sep =",")
+```
 
+
+**Data Set 1 TIDYING (tidyr and dplyr):** 
+```{r}
 clean_CPI <- CPI %>%
-  filter(!CPI$V1=="")
+  filter(!CPI$X=="")
 
   colnames(clean_CPI) <- c(
     "Indent Level",
@@ -54,24 +59,44 @@ long_CPI <- clean_CPI %>%
     names_to = "indexes", 
     values_to = "value"
   )
-
-
-
-
-
-
-
-
-
-clean_data <- CPI[-c(1:6), ]
-CPI2 <- data.frame(CPI[-6, ])
 ```
 
-**Data Set 1 TIDYING (tidyr and dplyr):** 
 
+**Data Set 1 ANALYSIS:**
+```{r}
 
-**Data Set 1 ANALYSIS**
+test <- long_CPI %>%
+  filter(long_CPI$indexes=="Unadjusted.percent.change.Jan..2023..Jan..2024")
 
+test %>% 
+  ggplot(aes(x=reorder(Expenditure.category,as.numeric(value)),
+             y=as.numeric(value)))+
+  geom_col()+
+   theme(axis.text.x = element_text(angle=65, vjust=1, hjust=1))+
+ggtitle("Unadjusted Percent Change Jan 2023 to Jan 2024") +
+  xlab("Expenditure Category") + ylab("Percent Change")
+
+```
+```{r}
+test2 <- long_CPI %>%
+  filter(long_CPI$indexes=="Seasonally.adjusted.percent.change.Dec..2023..Jan..2024")
+
+test2 %>% 
+  ggplot(aes(x=reorder(Expenditure.category,as.numeric(value)),
+             y=as.numeric(value)))+
+  geom_col()+
+   theme(axis.text.x = element_text(angle=65, vjust=1, hjust=1))+
+ggtitle("Seasonally Adjusted Percent Change Dec 2023 to Jan 2024") +
+  xlab("Expenditure Category") + ylab("Percent Change")
+```
+
+**Question: Which spending categories have experienced the most inflation and the least? In the last month and over the whole year?**
+
+Answer: 
+
+Over the whole year, Jan 2023 to Jan 2024, Motor Vehicle Insurance experienced the most inflation (20.6%), and Utility (piped) Gas Service experienced the least (-17.8%). 
+
+Over the last month of 2023, Dec 2023 to Jan 2024 (Seasonally adjusted), Utility (piped) Gas Service experienced the most inflation (2.0%), and Fuel oil experienced the least (-4.5%). 
 
 
 ## **Data Set 2 (Marriage)**
