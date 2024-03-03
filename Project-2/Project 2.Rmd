@@ -12,6 +12,7 @@ output: html_document
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(stringr)
 ```
 
 
@@ -33,9 +34,11 @@ CPI <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DAT
 
 **Data Set 1 TIDYING (tidyr and dplyr):** 
 ```{r}
+#remove blanks
 clean_CPI <- CPI %>%
   filter(!CPI$X=="")
 
+#rename cols
   colnames(clean_CPI) <- c(
     "Indent Level",
     "Expenditure category",
@@ -52,7 +55,7 @@ clean_CPI <- CPI %>%
 
 clean_CPI <- data.frame(clean_CPI[-1, ])
 
-
+#pivot to long form
 long_CPI <- clean_CPI %>%
   pivot_longer(
     3:11,
@@ -65,10 +68,12 @@ long_CPI <- clean_CPI %>%
 **Data Set 1 ANALYSIS:**
 ```{r}
 
-test <- long_CPI %>%
+#filter for just jan 23 to jan 24 index name
+graph1 <- long_CPI %>%
   filter(long_CPI$indexes=="Unadjusted.percent.change.Jan..2023..Jan..2024")
 
-test %>% 
+#tilted the text for readability
+graph1 %>% 
   ggplot(aes(x=reorder(Expenditure.category,as.numeric(value)),
              y=as.numeric(value)))+
   geom_col()+
@@ -78,10 +83,12 @@ ggtitle("Unadjusted Percent Change Jan 2023 to Jan 2024") +
 
 ```
 ```{r}
-test2 <- long_CPI %>%
+#filtered for dec 23 to jan 24 index name
+graph2 <- long_CPI %>%
   filter(long_CPI$indexes=="Seasonally.adjusted.percent.change.Dec..2023..Jan..2024")
 
-test2 %>% 
+#again tilted for readability
+graph2 %>% 
   ggplot(aes(x=reorder(Expenditure.category,as.numeric(value)),
              y=as.numeric(value)))+
   geom_col()+
@@ -107,11 +114,74 @@ Over the last month of 2023, Dec 2023 to Jan 2024 (Seasonally adjusted), Utility
 Marriage <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-2/Marriage.csv", sep =",")
 ```
 
-
 **Data Set 2 TIDYING (tidyr and dplyr):** 
+```{r}
+
+Clean_Marriage <- data.frame(Gender = "Male", Marriage[-c(1:2,17:37), ])
+Clean_Marriage$Gender[c(8:14)] <- "Female"
+Clean_Marriage <- data.frame(Clean_Marriage[-c(1,8), ])
+
+
+Long_Marriage <- Clean_Marriage %>%
+  pivot_longer(
+    3:14,
+    names_to = "marriage", 
+    values_to = "value"
+  )
+
+```
+
 
 **Data Set 2 ANALYSIS**
 
+```{r}
+#never married female, remove %
+Female_Never_Married <- Long_Marriage %>%
+  filter(Long_Marriage$Gender == "Female", Long_Marriage$marriage == "United.States..Never.married..Estimate")
+
+Female_Never_Married$value <- str_remove_all(Female_Marriage$value,"[\\%]")
+
+Female_Never_Married$Change <- NA
+
+# change in brackets
+for (i in 2:6){
+  Female_Never_Married$Change[i] <- as.numeric(Female_Never_Married$value[i]) - as.numeric(Female_Never_Married$value[i-1])
+}
+
+#never married male, remove %
+Male_Never_Married <- Long_Marriage %>%
+  filter(Long_Marriage$Gender == "Male", Long_Marriage$marriage == "United.States..Never.married..Estimate")
+  
+Male_Never_Married$value <- str_remove_all(Male_Marriage$value,"[\\%]")
+
+Male_Never_Married$Change <- NA
+
+# change in brackets
+for (i in 2:6){
+  Male_Never_Married$Change[i] <- as.numeric(Male_Never_Married$value[i]) - as.numeric(Male_Never_Married$value[i-1])
+}
+
+#comparing change in age brackets from male to female
+Male_Never_Married$Male_compared_to_female <- NA
+
+for (i in 2:6){
+  Male_Never_Married$Male_compared_to_female[i] <- as.numeric(Male_Never_Married$Change[i]) - as.numeric(Female_Never_Married$Change[i])
+}
+```
+
+
+
+
+
+**Question: In 2022 when this data was collected, what age bracket for males and females is the change in the proportion that have ever been married the largest?**
+
+Answer: 
+
+Largest difference between age brackets in "Males Never Married" is from the "20 to 34 years" age bracket (71.3%) to the "35 to 44 years" age bracket (29.3%), a change of -42.0%
+
+Largest difference between age bracket in "Females Never Married" is from the "20 to 34 years" age bracket (63.5%) to the "35 to 44 years" age bracket (23.6%), a change of -39.9%
+
+The change from the "15 to 19 years" age bracket to the  "20 to 34 years" age bracket has the largest gap between Males (-27.6%) and Females (-35.2%) at 7.6%
 
 
 ## **Data Set 3 (Sheds)**
