@@ -13,6 +13,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(stringr)
+library(lubridate)
+library(anytime) 
 ```
 
 
@@ -97,7 +99,7 @@ ggtitle("Seasonally Adjusted Percent Change Dec 2023 to Jan 2024") +
   xlab("Expenditure Category") + ylab("Percent Change")
 ```
 
-**Question: Which spending categories have experienced the most inflation and the least? In the last month and over the whole year?**
+**Question: "Which spending categories have experienced the most inflation and the least? In the last month and over the whole year?"**
 
 Answer: 
 
@@ -139,7 +141,7 @@ Long_Marriage <- Clean_Marriage %>%
 Female_Never_Married <- Long_Marriage %>%
   filter(Long_Marriage$Gender == "Female", Long_Marriage$marriage == "United.States..Never.married..Estimate")
 
-Female_Never_Married$value <- str_remove_all(Female_Marriage$value,"[\\%]")
+Female_Never_Married$value <- str_remove_all(Female_Never_Married$value,"[\\%]")
 
 Female_Never_Married$Change <- NA
 
@@ -152,7 +154,7 @@ for (i in 2:6){
 Male_Never_Married <- Long_Marriage %>%
   filter(Long_Marriage$Gender == "Male", Long_Marriage$marriage == "United.States..Never.married..Estimate")
   
-Male_Never_Married$value <- str_remove_all(Male_Marriage$value,"[\\%]")
+Male_Never_Married$value <- str_remove_all(Male_Never_Married$value,"[\\%]")
 
 Male_Never_Married$Change <- NA
 
@@ -173,7 +175,7 @@ for (i in 2:6){
 
 
 
-**Question: In 2022 when this data was collected, what age bracket for males and females is the change in the proportion that have ever been married the largest?**
+**Question: "In 2022 when this data was collected, what age bracket for males and females is the change in the proportion that have ever been married the largest?"**
 
 Answer: 
 
@@ -194,5 +196,59 @@ Sheds <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/D
 
 **Data Set 3 TIDYING (tidyr and dplyr):** 
 
+
+```{r}
+Shed_Clean <- Sheds
+
+Sheds_Clean <- data.frame(Sheds[,-3])
+
+# trying unsuccessfully to fix the date format inconsistency w lubridate package?
+#Sheds_Clean$First.Permit.Date[c(1:114)] <- mdy(Sheds_Clean$First.Permit.Date[c(1:114)])
+#Sheds_Clean$First.Permit.Date[c(1:114)] <- format(Sheds_Clean$First.Permit.Date[c(1:114)], format = "%Y-%m-%d")
+
+# i think this "anytime" package worked better than lubridate
+Sheds_Clean$First.Permit.Date <- anydate(Sheds_Clean$First.Permit.Date)
+Sheds_Clean$Permit.Expiration.Date <- anydate(Sheds_Clean$Permit.Expiration.Date)
+
+Sheds_Age <- data.frame(Sheds_Clean[,c(1,3,5,6,19)]) %>%
+arrange(desc(Age))
+```
+
+
+
+
 **Data Set 3 ANALYSIS**
+
+Question: This data can be analyzed to see how many sheds each company has applied to, this will also give us the ability to identify landlords who are negligent in repairing their properties based on how long these sheds have been present at the locations
+
+**How many sheds each company has:**
+```{r}
+Shed_Company_Count <- Sheds %>% group_by(Applicant.Business.Name) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop') %>%
+  arrange(desc(total_count))
+
+
+Shed_Company_Count$Percent <- NA
+
+for (i in 1:161){
+  Shed_Company_Count$Percent[i] <- as.numeric(Shed_Company_Count$total_count[i])/ sum(as.numeric(Shed_Company_Count$total_count))*100
+}
+
+print(Shed_Company_Count[1:10,])
+```
+
+**long these sheds have been present at the locations:**
+```{r}
+#oldest sheds
+print(Sheds_Age[1:10,])
+
+```
+
+
+
+
+
+
+
 
