@@ -1,0 +1,27 @@
+---
+title: "HW7"
+author: "GuillermoSchneider"
+date: "2024-03-05"
+output: html_document
+---
+
+```{r}
+https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.html
+```
+
+
+```{r}
+https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.xml
+```
+
+```{r}
+https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.json
+```
+
+
+
+
+
+
+
+
