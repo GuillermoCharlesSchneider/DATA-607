@@ -1,0 +1,28 @@
+---
+title: "sentiment_analysis"
+author: "GuillermoSchneider"
+date: "2024-03-08"
+output: html_document
+---
+
+```{r}
+#install.packages("tidytext")
+install.packages("textdata")
+library(tidytext)
+```
+
+
+```{r}
+get_sentiments("afinn")
+```
+
+
+```{r}
+get_sentiments("bing")
+```
+
+
+```{r}
+get_sentiments("nrc")
+```
+
