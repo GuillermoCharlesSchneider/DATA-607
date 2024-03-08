@@ -7,22 +7,64 @@ output: html_document
 
 ```{r}
 #install.packages("tidytext")
-install.packages("textdata")
+#install.packages("textdata")
+#install.packages("tidyverse")
 library(tidytext)
+library(textdata)
+library(tidyverse)
+install.packages("wordcloud")
 ```
-
 
 ```{r}
 get_sentiments("afinn")
 ```
 
-
 ```{r}
 get_sentiments("bing")
 ```
 
-
 ```{r}
 get_sentiments("nrc")
+```
+
+```{r}
+test_scrape <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-3/test_scrape.csv")
+```
+
+clean_scrape <- test_scrape[] 
+
+tidy_scrape <- test_scrape %>%
+  unnest_tokens(word, comment)
+
+```{r}
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+```
+
+
+```{r}
+tidy_scrape %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+```
+
+
+```{r}
+t <- tidy_scrape %>%
+  count(word, sort = TRUE)
+```
+?????
+```{r}
+library(wordcloud)
+w <- sort(rowSums(t), decreasing = TRUE)
+set.seed(222)
+wordcloud(word = word(w),
+          freq = w,
+          max.words = 150,
+          random.order = F,
+          min.freq = 5,
+          colors = brewer.pal(8, 'Dark2'),
+          scale = c(5, 0.3),
+          rot.per = 0.7)
 ```
 
