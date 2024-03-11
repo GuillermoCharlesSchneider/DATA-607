@@ -15,20 +15,27 @@ library(tidyverse)
 install.packages("wordcloud")
 ```
 
+##https://www.tidytextmining.com/sentiment
+
+
+**AFINN from Finn Årup Nielsen**
 ```{r}
 get_sentiments("afinn")
 ```
 
+**bing from Bing Liu and collaborators**
 ```{r}
 get_sentiments("bing")
 ```
 
+**nrc from Saif Mohammad and Peter Turney**
 ```{r}
 get_sentiments("nrc")
 ```
 
 ```{r}
 test_scrape <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-3/test_scrape.csv")
+
 ```
 
 clean_scrape <- test_scrape[] 
@@ -53,6 +60,8 @@ tidy_scrape %>%
 t <- tidy_scrape %>%
   count(word, sort = TRUE)
 ```
+
+
 ?????
 ```{r}
 library(wordcloud)
