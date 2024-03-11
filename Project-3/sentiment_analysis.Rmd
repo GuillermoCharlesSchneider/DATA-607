@@ -86,11 +86,23 @@ t <- tidy_scrape %>%
   count(word, sort = TRUE)
 ```
 
+
+search through reddit comments, group the skills thatre are 2 words
+
+skills one word
 Search for comments that include those words
 see what positive or negative words are around in those comments
 score?
 see which topics have more negative postive score?
 weight it by the relevancy?
+
+
+
+nrc from Saif Mohammad and Peter Turney -> word cloud
+
+
+sentiment analysis over time, we have the reddit dates, positive minus negative
+
 
 
 ?????
