@@ -5,21 +5,73 @@ date: "2024-03-05"
 output: html_document
 ---
 
+# **Assignment 7 – Working with XML and JSON in R**
+
+**Packages:**
 ```{r}
-https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.html
+#install.packages("XML")
+library(rvest)
+library(xml2)
+library(tibble)
+library(jsonlite)
 ```
 
-
+## **HTML df:**
 ```{r}
-https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.xml
+html_url <- "https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.html"
+#using rvest
+html_df <- as.data.frame(read_html(html_url) %>% html_table(fill=TRUE)) 
 ```
 
+## **XML df:**
 ```{r}
-https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.json
+xml_url <- "https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.xml"
+#using xml2
+xml_df <- read_xml(xml_url) 
+
+#read through the nested elements and grab  the specified xpath
+title <- xml_text(xml_find_all(xml_df, xpath = "//title"))
+author <- xml_text(xml_find_all(xml_df, xpath = "//author"))
+pages <- xml_text(xml_find_all(xml_df, xpath = "//pages"))
+published <- xml_text(xml_find_all(xml_df, xpath = "//published"))
+
+#recombine
+xml_df <- tibble(title = title, author = author, pages = pages, published = published) %>% as.data.frame
+
 ```
 
+## **JSON df:**
+```{r}
+json_url <- "https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW7/books.json"
+#using jsonlite
+json_df <- fromJSON(json_url) %>% as.data.frame
+```
+**Checking for differences:**
+```{r}
+all.equal(html_df, xml_df)
+all.equal(xml_df, json_df)
+all.equal(json_df, html_df)
 
+str(html_df)
+str(xml_df)
+str(json_df)
+```
 
+**Changing xml and json dataframe columns, "pages" and "published",  to numeric rather than char:**
+```{r}
+xml_df$pages <- as.numeric(xml_df$pages)
+xml_df$published <- as.numeric(xml_df$published)
+
+json_df$pages <- as.numeric(json_df$pages)
+json_df$published <- as.numeric(json_df$published)
+```
+
+**Fixed! -- html_df = xml_df = json_df**
+```{r}
+all.equal(html_df, xml_df)
+all.equal(xml_df, json_df)
+all.equal(json_df, html_df)
+```
 
 
 
