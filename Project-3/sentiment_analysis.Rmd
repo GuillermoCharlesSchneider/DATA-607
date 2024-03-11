@@ -9,10 +9,12 @@ output: html_document
 #install.packages("tidytext")
 #install.packages("textdata")
 #install.packages("tidyverse")
+#install.packages("wordcloud")
 library(tidytext)
 library(textdata)
 library(tidyverse)
-install.packages("wordcloud")
+library(wordcloud)
+
 ```
 
 ##https://www.tidytextmining.com/sentiment
@@ -33,15 +35,30 @@ get_sentiments("bing")
 get_sentiments("nrc")
 ```
 
+
+**sample of 8000 posts from lucas**
 ```{r}
 test_scrape <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-3/test_scrape.csv")
+```
+
+
+
+```{r}
+Skills <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-3/skills.csv")
 
 ```
 
-clean_scrape <- test_scrape[] 
 
+
+
+```{r}
+
+clean_scrape <- test_scrape[] 
 tidy_scrape <- test_scrape %>%
   unnest_tokens(word, comment)
+```
+
+
 
 ```{r}
 nrc_joy <- get_sentiments("nrc") %>% 
@@ -55,11 +72,25 @@ tidy_scrape %>%
   count(word, sort = TRUE)
 ```
 
+```{r}
+Skills$word <- tolower(Skills$Skills)
+
+tidy_scrape %>%
+  inner_join(Skills) %>%
+  count(word, sort = TRUE)
+```
+
 
 ```{r}
 t <- tidy_scrape %>%
   count(word, sort = TRUE)
 ```
+
+Search for comments that include those words
+see what positive or negative words are around in those comments
+score?
+see which topics have more negative postive score?
+weight it by the relevancy?
 
 
 ?????
