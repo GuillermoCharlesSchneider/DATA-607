@@ -103,7 +103,7 @@ nrc from Saif Mohammad and Peter Turney -> word cloud
 
 sentiment analysis over time, we have the reddit dates, positive minus negative
 
-
+list the courses that we scraped
 
 ?????
 ```{r}
