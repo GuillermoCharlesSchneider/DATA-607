@@ -5,7 +5,7 @@ date: "2024-03-31"
 author: "Guillermo Schneider"
 ---
 
-# **Sentiment Analysis on LOTR**
+# **Sentiment Analysis**
 
 ```{r}
 #install.packages('tidytext')
@@ -15,11 +15,6 @@ library(tidytext)
 library(textdata)
 library(wordcloud)
 ```
-
-```{r}
-
-```
-
 
 ```{r}
 get_sentiments("afinn")
