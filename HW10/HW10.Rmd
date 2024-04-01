@@ -11,13 +11,33 @@ author: "Guillermo Schneider"
 #install.packages('tidytext')
 #install.packages('textdata')
 #install.packages('wordcloud')
+#install.packages('tm')
 library(tidytext)
 library(textdata)
 library(wordcloud)
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(tm)
+#install.packages('devtools')
+
+#install.packages('reticulate')
+library(reticulate)
+
+#install_miniconda()
 ```
 
-```{r}
 
+```{r}
+devtools::install_github("farach/huggingfaceR")
+```
+
+
+```{r}
+```
+**LOTR Script, with the movie, the character, and the line, thanks to github.com/tianyigu**
+```{r}
+LOTR <-read_csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/HW10/lotrscript.csv")
 ```
 
 
@@ -25,109 +45,89 @@ library(wordcloud)
 get_sentiments("afinn")
 ```
 
-**Books split into individual words**
+**Movies split into individual words**
 ```{r}
-library(janeaustenr)
-library(dplyr)
-library(stringr)
+LOTR$dialog <- removePunctuation(LOTR$dialog) #Remove all punctuation marks
+LOTR$dialog <- stripWhitespace(LOTR$dialog) #Remove excess whitespace
+LOTR$dialog <- tolower(LOTR$dialog) #Make all characters lowercase
+LOTR$dialog <- removeNumbers(LOTR$dialog)
 
-tidy_books <- austen_books() %>%
-  group_by(book) %>%
-  mutate(
-    linenumber = row_number(),
-    chapter = cumsum(str_detect(text, 
-                                regex("^chapter [\\divxlc]", 
-                                      ignore_case = TRUE)))) %>%
+tidy_LOTR <- LOTR %>%
+  group_by(movie) %>%
   ungroup() %>%
-  unnest_tokens(word, text)
+  unnest_tokens(word, dialog)
 ```
 
-**Joyful Words in Emma**
+**Joyful Words in The Return of the King**
 ```{r}
 nrc_joy <- get_sentiments("nrc") %>% 
   filter(sentiment == "joy")
 
-tidy_books %>%
-  filter(book == "Emma") %>%
+tidy_LOTR %>%
+  filter(movie == "The Return of the King Movie Script") %>%
   inner_join(nrc_joy) %>%
   count(word, sort = TRUE)
 ```
-
-**Sentiment scores for every 80 lines**
-```{r}
-library(tidyr)
-
-jane_austen_sentiment <- tidy_books %>%
-  inner_join(get_sentiments("bing")) %>%
-  count(book, index = linenumber %/% 80, sentiment) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
-  mutate(sentiment = positive - negative)
-```
 **Sentiment change through the books**
 
-```{r}
-library(ggplot2)
 
-ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~book, ncol = 2, scales = "free_x")
+```{r}
+tidy_LOTR %>% 
+  count(char) %>%
+  arrange(desc(n)) %>%
+  slice(1:15) %>%
+  ggplot(aes(x=reorder(char, n), y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend=FALSE) + 
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="red", high="blue") +
+  labs(x="Character", y="Lines of dialogue",
+       title="Lines of dialogue per character (absolute values)") +  
+  coord_flip() +
+  theme_bw()
 ```
 
-**Just Pride and Prejudice book df by word**
+**Just The Two Towers df by word**
 
 ```{r}
-pride_prejudice <- tidy_books %>% 
-  filter(book == "Pride & Prejudice")
+twoTowers <- tidy_LOTR %>% 
+  filter(movie == "The Two Towers Movie Script")
 
-pride_prejudice
+twoTowers
 ```
 
-**Comparing the senitment packages**
+**Comparing the sentiment packages**
 ```{r}
-afinn <- pride_prejudice %>% 
+afinn <- twoTowers %>% 
   inner_join(get_sentiments("afinn")) %>% 
-  group_by(index = linenumber %/% 80) %>% 
+  group_by(char) %>% 
   summarise(sentiment = sum(value)) %>% 
   mutate(method = "AFINN")
 
 bing_and_nrc <- bind_rows(
-  pride_prejudice %>% 
+  twoTowers %>% 
     inner_join(get_sentiments("bing")) %>%
     mutate(method = "Bing et al."),
-  pride_prejudice %>% 
+  twoTowers %>% 
     inner_join(get_sentiments("nrc") %>% 
                  filter(sentiment %in% c("positive", 
                                          "negative"))
     ) %>%
-    mutate(method = "NRC")) %>%
-  count(method, index = linenumber %/% 80, sentiment) %>%
-  pivot_wider(names_from = sentiment,
-              values_from = n,
-              values_fill = 0) %>% 
-  mutate(sentiment = positive - negative)
+    mutate(method = "NRC")) 
 
-```
-**Same book different sentiment lexicons**
-```{r}
-bind_rows(afinn, 
-          bing_and_nrc) %>%
-  ggplot(aes(index, sentiment, fill = method)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~method, ncol = 1, scales = "free_y")
 ```
 
 **Bing Sentiment, individual words, all books**
 ```{r}
-bing_word_counts <- tidy_books %>%
+LOTR_word_counts <- tidy_LOTR %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
 
-bing_word_counts
+LOTR_word_counts
 ```
 **Contribution to sentiment**
 ```{r}
-bing_word_counts %>%
+LOTR_word_counts %>%
   group_by(sentiment) %>%
   slice_max(n, n = 10) %>% 
   ungroup() %>%
@@ -141,9 +141,85 @@ bing_word_counts %>%
 **Love a good word cloud**
 ```{r}
 
-tidy_books %>%
+tidy_LOTR %>%
   anti_join(stop_words) %>%
   count(word) %>%
   with(wordcloud(word, n, max.words = 100))
+```
+=
+
+## **trying hugging face**
+
+**https://heartbeat.comet.ml/using-hugging-face-transformers-for-sentiment-analysis-in-r-6b100c025a2e**
+
+**i got too lost in the sauce. that was fun tho! i dont fully understand exactly what this package is doing. it seems cool, using the already trained nlp model, check the model results against the predicted scores. its also running python in R?**
+```{r}
+#hf_python_depends('transformers')
+library(huggingfaceR)
+
+distilBERT <- hf_load_pipeline(
+  model_id = "distilbert-base-uncased-finetuned-sst-2-english", 
+  task = "text-classification"
+  )
+```
+
+```{r}
+reticulate::py_install("transformers")
+transformers <- import("transformers")
+model_name <- "nlptown/bert-base-multilingual-uncased-sentiment"
+tokenizer <- transformers$BertTokenizer$from_pretrained(model_name)
+model <- transformers$BertForSequenceClassification$from_pretrained(model_name)
+```
+
+```{r}
+inputs <- lapply(LOTR$dialog, tokenizer$encode_plus, add_special_tokens = TRUE, 
+                 return_tensors = "pt")
+```
+
+```{r}
+torch <- import("torch")
+outputs <- lapply(inputs, function(input) {
+  with(torch$no_grad(), {
+    model(input_ids = input$input_ids, token_type_ids = input$token_type_ids, 
+          attention_mask = input$attention_mask)$logits
+  })
+})
+```
+
+
+```{r}
+predictions <- sapply(outputs, function(output) {
+  torch$argmax(output)$item() 
+})
+```
+
+
+```{r}
+threshold <- 2.5
+LOTR$binary_scores <- ifelse(predictions >= threshold, 1, 0)
+```
+
+```{r}
+LOTR %>% 
+  mutate(sentiment = ifelse(LOTR$binary_scores > 0, "Positive", "Negative")) %>%
+  group_by(sentiment) %>%
+  summarise(count = n()) 
+```
+```{r}
+LOTR$sentimentresult <- ifelse(LOTR$binary_scores >0 , "Positive", "Negative")
+LOTR$sentimentresult
+```
+
+**I think i must've implemented this confusion matrix wrong?**
+```{r}
+confusion_matrix <- table(unlist(predictions), unlist(LOTR$binary_scores))
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+precision <- diag(confusion_matrix) / colSums(confusion_matrix)
+recall <- diag(confusion_matrix) / rowSums(confusion_matrix)
+
+confusion_matrix
+accuracy
+precision
+recall
 ```
 
