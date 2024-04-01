@@ -5,46 +5,63 @@ date: "2024-03-08"
 output: html_document
 ---
 
+# **PROJECT 3: Guillermo Schneider, Richie Rivera, Lucas Weyrich, Jonathan Cruz**
+
+### Summary:
+Search through reddit comments
+Search for comments that include Skills
+see what positive or negative words are around in those comments
+average sentiment score for each Skill
+sentiment analysis over time
+
+
+
 ```{r}
 #install.packages("tidytext")
 #install.packages("textdata")
 #install.packages("tidyverse")
 #install.packages("wordcloud")
+#install.packages("datawizard")
+#install.packages("ggrepel")
 library(tidytext)
 library(textdata)
 library(tidyverse)
 library(wordcloud)
-
+library(caret)
+library(datawizard)
+library(ggrepel)
 ```
 
-##https://www.tidytextmining.com/sentiment
+## https://www.tidytextmining.com/sentiment
 
+### GRABBING SENTIMENT LABELED DICTIONARIES
 
 **AFINN from Finn Årup Nielsen**
 ```{r}
-get_sentiments("afinn")
+afinn <- get_sentiments("afinn")
 ```
 
 **bing from Bing Liu and collaborators**
 ```{r}
-get_sentiments("bing")
+bing <- get_sentiments("bing")
 ```
 
 **nrc from Saif Mohammad and Peter Turney**
 ```{r}
-get_sentiments("nrc")
+nrc <- get_sentiments("nrc")
 ```
 
+```{r}
+afinn_nrc_sentiments <- afinn %>% 
+  inner_join(nrc) 
+```
+  
+  
+### SCRAPING THANKS TO LUCAS
 
 **sample of 8000 posts from lucas**
 ```{r}
 test_scrape <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Project-3/test_scrape.csv")
-```
-
-**separate 8000 comments into single words**
-```{r}
-tidy_test_scrape <- test_scrape %>%
-  unnest_tokens(word, comment)
 ```
 
 **full 125k posts from lucas**
@@ -52,11 +69,8 @@ tidy_test_scrape <- test_scrape %>%
 full_scrape <- read.csv("https://raw.githubusercontent.com/riverar9/cuny-msds-project-3/main/part_2/reddit%20scrape.csv")
 ```
 
-**separate 125k comments into single words**
-```{r}
-tidy_full_scrape <- full_scrape %>%
-  unnest_tokens(word, comment)
-```
+
+## UPDATED SKILLS
 
 **Skills provided by jon:**
 ```{r}
@@ -75,27 +89,334 @@ row.names(Skills_single_word) <- 1:nrow(Skills_single_word)
 
 ```
 
-**TWO WORD SKILLS MERGED INTO ONE (ex:data science -> datascience), multiple words per bucket. this is a stupid method, but i was too tired to figure out a new function, and i needed to look through them all anyway to see which needed to be combined and which didnt:**
+**TWO WORD SKILLS MERGED INTO ONE and trimmed (ex:data science -> datascience), multiple words per bucket. this is a stupid method, but i was too tired to figure out a new function, and i needed to look through them all anyway to see which needed to be combined and which didnt:**
 ```{r}
-for(x in c(1,5,10,13,17,21,24,23,26,29,35,37,39,42,46,48,50,56,60,59,64,63,66,73,72,75,77,80,79,82,84,86,89,91,93,98,97,102,101,100,106,108,110)){
+for(x in c(1,5,10,13,21,24,23,26,29,35,37,39,42,46,48,50,56,60,59,64,63,66,73,72,75,77,80,79,82,84,86,91,93,98,97,102,101,100,106,108,110)){
   Skills_single_word$word[x] <- paste(Skills_single_word$word[x],Skills_single_word$word[x+1],sep = "")
 }
 
-Skills_single_word <- Skills_single_word[-c(2,6,11,14,18,22,25,24,27,30,36,38,40,43,47,49,51,57,61,60,65,64,67,74,73,76,78,81,80,83,85,87,90,92,94,99,98,103,102,101,107,109,111), ]
+Skills_single_word <- Skills_single_word[-c(2,6,11,14,17,18,22,25,24,27,30,36,38,40,43,47,49,51,57,61,60,65,64,67,74,73,76,78,81,80,83,85,87,90,92,94,99,98,103,102,101,107,109,111), ]
+row.names(Skills_single_word) <- 1:nrow(Skills_single_word)
+
 
 ```
+
+```{r}
+write.csv(Skills_single_word, "Updated_Skills.csv", row.names=FALSE)
+```
+
+## MERGED 2 WORD SKILLS (ex: data science -> datascience) IN SCRAPED REDDIT COMMENTS
+
+### **TEST SCRAPE 8k**
+```{r}
+test_scrape$comment <- tolower(test_scrape$comment)
+```
+
+**test 8k data, once again im sure we could write a function, but ive already commited to this stupid copy paste, maybe one of you can make a:  gsub inputs(skills...), desired outputs (skills merged...)**
+```{r}
+test_scrape$comment <- gsub("data science", "datascience,",test_scrape$comment)
+test_scrape$comment <- gsub("data analysis", "dataanalysis,",test_scrape$comment)
+test_scrape$comment <- gsub("cloud databases", "clouddatabases",test_scrape$comment)
+test_scrape$comment <- gsub("machine learning", "machinelearning",test_scrape$comment)
+test_scrape$comment <- gsub("apache spark", "apachespark",test_scrape$comment)
+test_scrape$comment <- gsub("pivot table", "pivottable",test_scrape$comment)
+test_scrape$comment <- gsub("case studies", "casestudies",test_scrape$comment)
+test_scrape$comment <- gsub("convolutional neuralnet works", "convolutionalneuralnetworks",test_scrape$comment)
+test_scrape$comment <- gsub("data ethics", "dataethics",test_scrape$comment)
+test_scrape$comment <- gsub("data collection", "datacollection,",test_scrape$comment)
+test_scrape$comment <- gsub("data exploration", "dataexploration,",test_scrape$comment)
+test_scrape$comment <- gsub("artificial intelligence", "artificialintelligence,",test_scrape$comment)
+test_scrape$comment <- gsub("machine learning", "machinelearning,",test_scrape$comment)
+
+#ive started to regret it about here
+test_scrape$comment <- gsub("ask questions", "askquestions,",test_scrape$comment)
+test_scrape$comment <- gsub("data driven", "datadriven",test_scrape$comment)
+test_scrape$comment <- gsub("big data", "bigdata",test_scrape$comment)
+test_scrape$comment <- gsub("descriptive statistics", "descriptivestatistics",test_scrape$comment)
+test_scrape$comment <- gsub("recurrent neural network", "recurrentneuralnetwork",test_scrape$comment)
+test_scrape$comment <- gsub("deep neural networks", "deepneuralnetworks",test_scrape$comment)
+test_scrape$comment <- gsub("hyper parameter tuning", "hyperparametertuning",test_scrape$comment)
+test_scrape$comment <- gsub("exploratory data analysis", "exploratorydataanalysis",test_scrape$comment)
+test_scrape$comment <- gsub("neural network architecture", "neuralnetworkarchitecture",test_scrape$comment)
+test_scrape$comment <- gsub("regression analysis", "regressionanalysis",test_scrape$comment)
+test_scrape$comment <- gsub("data aggregation", "dataaggregation",test_scrape$comment)
+test_scrape$comment <- gsub("deep learning", "deeplearning",test_scrape$comment)
+test_scrape$comment <- gsub("data cleansing", "datacleansing",test_scrape$comment)
+test_scrape$comment <- gsub("statistical hypothesis testing", "statisticalhypothesistesting",test_scrape$comment)
+test_scrape$comment <- gsub("relational database management systems", "relationaldatabasemanagementsystems",test_scrape$comment)
+test_scrape$comment <- gsub("information technology", "informationtechnology",test_scrape$comment)
+test_scrape$comment <- gsub("data architecture", "dataarchitecture",test_scrape$comment)
+test_scrape$comment <- gsub("process data", "processdata",test_scrape$comment)
+
+
+```
+
+**separate 8000 comments into single words**
+```{r}
+tidy_test_scrape <- test_scrape %>%
+  unnest_tokens(word, comment)
+```
+
+**TEST_SCRAPE: filter to just comments containing skills**
+```{r}
+TEST <- tidy_test_scrape %>%
+  inner_join(Skills_single_word) 
+
+comment_ids <- distinct(TEST, X, Skills)
+
+TEST2 <- filter(tidy_test_scrape, tidy_test_scrape$X %in% comment_ids$X)
+
+
+TEST2 <- TEST2 %>%
+  left_join(afinn) 
+
+TEST2 <- TEST2 %>%
+  left_join(bing) 
+
+TEST2 <- TEST2 %>%
+  left_join(Skills_single_word)
+
+#MEAN excluding all non sentiment words. sum of sentiment values /  number of only sentiment words
+TEST3 <- TEST2 %>%
+  group_by(X) %>%
+  summarize(sentiment_score = mean(value,na.rm=T))
+
+#setting each word without a sentiment, to a 0 sentiment value
+TEST2$value[is.na(TEST2$value)] <- 0 
+ 
+#MEAN of sentiments / total words (including nonsentiments) in comment 
+TEST4 <- TEST2 %>%
+  group_by(X) %>%
+  summarize(sentiment_score = mean(value))
+
+TEST5 <- TEST2 %>%
+  group_by(X) %>%
+  summarize(sentiment_score = sum(value))
+  
+```
+
+
+
+
+
+```{r}
+write.csv(tidy_test_scrape, "tidy_test_scrape_merged.csv", row.names=FALSE)
+```
+
+### **FULL SCRAPE**
+
+**full_scrape TO LOWER CASE**
+```{r}
+full_scrape$comment <- tolower(full_scrape$comment)
+```
+
+**CLEANING TWO WORDS TO ONE. once again no function... zzz**
+```{r}
+full_scrape$comment <- gsub("data science", "datascience",full_scrape$comment)
+full_scrape$comment <- gsub("data analysis", "dataanalysis",full_scrape$comment)
+full_scrape$comment <- gsub("cloud databases", "clouddatabases",full_scrape$comment)
+full_scrape$comment <- gsub("machine learning", "machinelearning",full_scrape$comment)
+full_scrape$comment <- gsub("apache spark", "apachespark",full_scrape$comment)
+full_scrape$comment <- gsub("pivot table", "pivottable",full_scrape$comment)
+full_scrape$comment <- gsub("case studies", "casestudies",full_scrape$comment)
+full_scrape$comment <- gsub("convolutional neuralnet works", "convolutionalneuralnetworks",full_scrape$comment)
+full_scrape$comment <- gsub("data ethics", "dataethics",full_scrape$comment)
+full_scrape$comment <- gsub("data collection", "datacollection",full_scrape$comment)
+full_scrape$comment <- gsub("data exploration", "dataexploration",full_scrape$comment)
+full_scrape$comment <- gsub("artificial intelligence", "artificialintelligence",full_scrape$comment)
+full_scrape$comment <- gsub("machine learning", "machinelearning",full_scrape$comment)
+
+#ive started to regret it about here
+full_scrape$comment <- gsub("ask questions", "askquestions",full_scrape$comment)
+full_scrape$comment <- gsub("data driven", "datadriven",full_scrape$comment)
+full_scrape$comment <- gsub("big data", "bigdata",full_scrape$comment)
+full_scrape$comment <- gsub("descriptive statistics", "descriptivestatistics",full_scrape$comment)
+full_scrape$comment <- gsub("recurrent neural network", "recurrentneuralnetwork",full_scrape$comment)
+full_scrape$comment <- gsub("deep neural networks", "deepneuralnetworks",full_scrape$comment)
+full_scrape$comment <- gsub("hyper parameter tuning", "hyperparametertuning",full_scrape$comment)
+full_scrape$comment <- gsub("exploratory data analysis", "exploratorydataanalysis",full_scrape$comment)
+full_scrape$comment <- gsub("neural network architecture", "neuralnetworkarchitecture",full_scrape$comment)
+full_scrape$comment <- gsub("regression analysis", "regressionanalysis",full_scrape$comment)
+full_scrape$comment <- gsub("data aggregation", "dataaggregation",full_scrape$comment)
+full_scrape$comment <- gsub("deep learning", "deeplearning",full_scrape$comment)
+full_scrape$comment <- gsub("data cleansing", "datacleansing",full_scrape$comment)
+full_scrape$comment <- gsub("statistical hypothesis testing", "statisticalhypothesistesting",full_scrape$comment)
+full_scrape$comment <- gsub("relational database management systems", "relationaldatabasemanagementsystems",full_scrape$comment)
+full_scrape$comment <- gsub("information technology", "informationtechnology",full_scrape$comment)
+full_scrape$comment <- gsub("data architecture", "dataarchitecture",full_scrape$comment)
+full_scrape$comment <- gsub("process data", "processdata",full_scrape$comment)
+```
+
+**separate 125k comments into single words**
+```{r}
+tidy_full_scrape <- full_scrape %>%
+  unnest_tokens(word, comment)
+```
+
+**FULL SCRAPE: FIND COMMENTS CONTAINING SKILLS**
+```{r, include=FALSE}
+#i inner joined the skills onto the full word list, so it just kept the words that matched the skills, 
+comments_containing_skills_full_scrape <- tidy_full_scrape %>%
+  inner_join(Skills_single_word) 
+
+#then grabbed the distinct comment ids
+comment_ids_full <- distinct(comments_containing_skills_full_scrape, X, Skills)
+
+#then filtered the full scrape to just include comment ids that were in that list
+comments_containing_skills_full_scrape <- filter(tidy_full_scrape, tidy_full_scrape$X %in% comment_ids_full$X)
+
+write.csv(comments_containing_skills_full_scrape , "comments_containing_skills_full_scrape .csv", row.names=FALSE)
+
+
+#added afinn value
+comments_containing_skills_full_scrape <- comments_containing_skills_full_scrape %>%
+  left_join(afinn) %>%
+  left_join(Skills_single_word)
+
+#setting each word without a sentiment, to a 0 sentiment value
+comments_containing_skills_full_scrape$value[is.na(comments_containing_skills_full_scrape$value)] <- 0 
+ 
+#MEAN of sentiments / total words (including nonsentiments) in comment 
+sentiment_mean_full_scrape <- comments_containing_skills_full_scrape %>%
+  group_by(X) %>%
+  summarize(sentiment_score = mean(value))
+
+#adding skill groupings to the comments, to graph it
+relevancy_vs_sentiment <- comment_ids_full %>% 
+  left_join(sentiment_mean_full_scrape) %>%
+  left_join(Skills)
+
+#mean of each skill group
+MEAN <- comment_ids_full %>% 
+  left_join(sentiment_mean_full_scrape) %>%
+  group_by(Skills) %>%
+  summarize(mean_score = mean(sentiment_score))
+
+MEAN %>%
+  inner_join(Skills_single_word)
+
+MEAN$rescaled_score <- rescale(MEAN$mean_score, to = c(-1, 1))
+
+MEAN <- Skills %>%
+  left_join(MEAN)
+
+MEAN <- MEAN[,-3]
+
+MEAN$rescaled_score <- rescale(MEAN$mean_score, to = c(0, 1))
+MEAN$RescaledRelevancy <- rescale(MEAN$Relevancy, to = c(0, 1))
+
+
+```
+
+```{r}
+#adding skill groupings to the comments, to graph it
+relevancy_vs_sentiment <- comment_ids_full %>% 
+  left_join(sentiment_mean_full_scrape) %>%
+  left_join(Skills)
+
+```
+
+# **GRAPHS**
+```{r}
+top10skillsGraph <- relevancy_vs_sentiment %>%
+  filter(Skills == c("Prepare Data for Exploration","Information Technology (IT) Architecture")) 
+
+
+skill_comment_count <- comment_ids_full %>%
+  group_by(Skills) %>%
+ count(Skills)
+  
+MEAN <- MEAN %>%
+  left_join(skill_comment_count)
+
+top10MEAN <- MEAN %>%
+arrange(n) %>% 
+   top_n(10)
+
+top10MEAN$Skills<- str_trim(top10MEAN$Skills) 
+
+ggplot(top10MEAN, aes(x=rescaled_score, y=RescaledRelevancy, size = n)) +
+   geom_vline(xintercept = 0.5) + geom_hline(yintercept = 0.5) +
+    geom_point(alpha=0.6) +
+    geom_label_repel(
+    label=top10MEAN$Skills,
+    size=3,
+    nudge_x = 0, nudge_y = 0.01)+
+    lims(x=c(0,1),y=c(0,1))+
+    scale_size(range = c(1.8,6.6 ), name="Count of Comments") +
+    labs(x='Comparative Relevancy', y='Comparative Sentiment', title='Relevancy vs Sentiment in Most Commented Skills') 
+
+
+ggplot(relevancy_vs_sentiment, aes(reorder(factor(x=Skills),Relevancy), y=sentiment_score)) +
+  geom_smooth(alpha = 1/10, method = "lm", se=TRUE, color="blue", aes(group=1)) +
+  geom_boxplot(varwidth = TRUE) +
+  labs(x='relevancy', y='sentiment score', title='relevancy vs. sentiment Values') +
+  scale_x_discrete(label=function(x) abbreviate(x, minlength=15)) +
+  theme(axis.text.x = element_text(angle = 75, hjust = 1)) 
+  
+  
+
+
+ggplot(relevancy_vs_sentiment, aes(x=Relevancy, y=sentiment_score)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  labs(x='relevancy', y='sentiment score', title='relevancy vs. sentiment Values') 
+
+```
+
+
+
+
+**left join sentiments into the full scrape**
+```{r}
+sentiment_tidy_merged_full_scrape <- tidy_full_scrape %>%
+  left_join(afinn) 
+
+sentiment_tidy_merged_full_scrape <- sentiment_tidy_merged_full_scrape %>%
+  left_join(bing) 
+
+```
+**one hot encoding is a good solution for the NRC multiple sentiments per word THANK YOU LUCAS**
+```{r}
+#nrc$word = as.factor(nrc$word)
+#onehotnrc <- predict(dummyVars(" ~ .", data = nrc), newdata = nrc)
+#onehotnrc = as.data.frame(onehotnrc)
+
+
+#group by sentiment
+#lucas will use for nrc analysis if needed
+
+#library(caret)
+#one_hot_encoded <- dummyVars("~.", data = data)
+#encoded_data <- data.frame(predict(one_hot_encoded, newdata = data))
+```
+
+
+
+
+
+
+
+
+**CLEANED TIDIED DATASET WITH MERGED WORDS**
+```{r}
+write.csv(sentiment_tidy_merged_full_scrape, "tidy_full_scrape_merged_sentiments.csv", row.names=FALSE)
+```
+
 
 **count of single word Skills words in the tidied scape:**
 ```{r}
 #8000 comments
 tidy_test_scrape %>%
   inner_join(Skills_single_word) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>%
+  head(10)
 
 #125k comments
 tidy_full_scrape %>%
   inner_join(Skills_single_word) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>%
+  head(10)
 ```
 
 
@@ -109,38 +430,93 @@ nrc_joy <- get_sentiments("nrc") %>%
 ```{r}
 tidy_test_scrape %>%
   inner_join(nrc_joy) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>%
+  head(10)
 ```
 
 
 
 **count of all single words**
 ```{r}
-t <- tidy_scrape %>%
+t <- tidy_full_scrape %>%
   count(word, sort = TRUE)
 ```
 
 
-search through reddit comments, group the skills thatre are 2 words
-
-skills one word
-Search for comments that include those words
-see what positive or negative words are around in those comments
-score?
-see which topics have more negative postive score?
-weight it by the relevancy?
-
-
-
-nrc from Saif Mohammad and Peter Turney -> word cloud
-
-
-sentiment analysis over time, we have the reddit dates, positive minus negative
-
-list the courses that we scraped
-
-**????? idk i cant this stupid wordcloud to work atm, ill fix it at some pt**
+## **Time Series graphs (thanks LUCAS)**
 ```{r}
+
+library(ggplot2)
+library(zoo)
+
+sentiment_comments_containing_skills_full_scrape <- comments_containing_skills_full_scrape %>%
+  left_join(afinn) 
+
+sentiment_comments_containing_skills_full_scrape <- sentiment_comments_containing_skills_full_scrape %>%
+  left_join(bing) 
+
+time_series_full_scrape = sentiment_tidy_merged_full_scrape %>%
+  group_by(date) %>%
+  summarize(positive = sum(sentiment == "positive", na.rm = TRUE), 
+            negative = sum(sentiment == "negative", na.rm = TRUE)) %>%
+  mutate(sentiment_value = positive - negative) %>%
+  mutate(roll_avg_7 = rollmean(sentiment_value, k = 7, fill = NA)) %>%
+  mutate(roll_avg_30 = rollmean(sentiment_value, k = 30, fill = NA)) %>%
+  mutate(roll_avg_30_pos = rollmean(positive, k = 30, fill = NA)) %>%
+  mutate(roll_avg_30_neg = rollmean(negative, k = 30, fill = NA))
+
+time_series_skills_scrape = sentiment_comments_containing_skills_full_scrape %>%
+    group_by(date) %>%
+  summarize(positive = sum(sentiment == "positive", na.rm = TRUE), 
+            negative = sum(sentiment == "negative", na.rm = TRUE)) %>%
+  mutate(sentiment_value = positive - negative) %>%
+  mutate(roll_avg_7 = rollmean(sentiment_value, k = 7, fill = NA)) %>%
+  mutate(roll_avg_30 = rollmean(sentiment_value, k = 30, fill = NA)) %>%
+  mutate(roll_avg_30_pos = rollmean(positive, k = 30, fill = NA)) %>%
+  mutate(roll_avg_30_neg = rollmean(negative, k = 30, fill = NA))
+
+time_series_full_scrape$date = as.Date(time_series_full_scrape$date)
+time_series_skills_scrape$date = as.Date(time_series_skills_scrape$date)
+
+ggplot(aes(x = date, y = sentiment_value), data = time_series_full_scrape) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = 'Date', y = 'Sentiment Count (Positive - Negative)', title = 'Sentiment Counts for r/DataScience and r/DataEngineer')
+
+ggplot(aes(x = date, y = roll_avg_30), data = time_series_full_scrape) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = 'Date', y = 'Sentiment Count (Positive - Negative)', title = '30-day Rolling Mean of Sentiment for r/DataScience and r/DataEngineer')
+
+ggplot(time_series_full_scrape, aes(x = date)) +
+  geom_line(aes(y = roll_avg_30_pos, color = "Positive")) +
+  geom_line(aes(y = roll_avg_30_neg, color = "Negative")) +
+  labs(x = "Date", y = " Sentiment Count", title = "30-day Rolling Mean of Sentiment for r/DataScience and r/DataEngineer", color = "Sentiment") +
+  scale_color_manual(values = c("Positive" = "#4CCD99", "Negative" = "#EE4266")) +
+  theme_minimal()
+
+ggplot(aes(x = date, y = sentiment_value), data = time_series_skills_scrape) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = 'Date', y = 'Sentiment Count (Positive - Negative)', title = 'Sentiment Counts for Skills in r/DataScience and r/DataEngineer')
+
+ggplot(aes(x = date, y = roll_avg_30), data = time_series_skills_scrape) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = 'Date', y = 'Sentiment Count (Positive - Negative)', title = '30-day Rolling Mean of Sentiment for Skills in r/DataScience and r/DataEngineer')
+
+ggplot(time_series_skills_scrape, aes(x = date)) +
+  geom_line(aes(y = roll_avg_30_pos, color = "Positive")) +
+  geom_line(aes(y = roll_avg_30_neg, color = "Negative")) +
+  labs(x = "Date", y = " Sentiment Count", title = "30-day Rolling Mean of Sentiment for Skills in r/DataScience and r/DataEngineer", color = "Sentiment") +
+  scale_color_manual(values = c("Positive" = "#4CCD99", "Negative" = "#EE4266")) +
+  theme_minimal()
+```
+
+
+
+**potential word cloud code?**
+
 library(wordcloud)
 w <- sort(rowSums(t), decreasing = TRUE)
 set.seed(222)
@@ -152,5 +528,5 @@ wordcloud(word = word(w),
           colors = brewer.pal(8, 'Dark2'),
           scale = c(5, 0.3),
           rot.per = 0.7)
-```
+
 
