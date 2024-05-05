@@ -1,0 +1,41 @@
+---
+title: "Final Project"
+author: "GuillermoSchneider"
+date: "2024-05-05"
+output: html_document
+---
+
+my boss said i can use our internal ID's and just their first names, no identifying info. same with account and employer info.
+
+
+who our union represents:
+Cleaners, janitors, security guards, ushers, doormen, window cleaners
+
+our most notable employers:
+-World Trade Center, Empire State Building, Madison Square Garden, Yankee stadium , Barclays Center, Metropolitan opera house, Port Authority, CUNY Graduate Center 
+
+
+jan 2023 to dec 2023
+
+
+steward info, leader points, and purple points, turnout points (CRM-prod)
+```{r}
+
+```
+
+
+
+account info, complaints, complaint type? one hot encoding, claim types? (CRM-SQL)
+
+
+
+graph on leader points vs complaints
+
+
+
+machine learning
+
+
+
+
+
