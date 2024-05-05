@@ -5,28 +5,160 @@ date: "2024-05-05"
 output: html_document
 ---
 
-my boss said i can use our internal ID's and just their first names, no identifying info. same with account and employer info.
+*libraries*
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
 
 
-who our union represents:
-Cleaners, janitors, security guards, ushers, doormen, window cleaners
+*My boss said i can use our internal ID's and just their first names, no identifying info. same with account and employer info.*
 
-our most notable employers:
--World Trade Center, Empire State Building, Madison Square Garden, Yankee stadium , Barclays Center, Metropolitan opera house, Port Authority, CUNY Graduate Center 
+
+## who our union represents:
+**Cleaners, janitors, security guards, ushers, doormen, window cleaners**
+
+## our most notable employers:
+**World Trade Center, Empire State Building, Madison Square Garden, Yankee stadium , Barclays Center, Metropolitan opera house, Port Authority, CUNY Graduate Center**
 
 
 jan 2023 to dec 2023
 
 
-steward info, leader points, and purple points, turnout points (CRM-prod)
-```{r}
+## steward info, leader points, and purple points, turnout points (CRM-prod)
+2023 stewards
 
+**SQL Query (CRMSQL):**
+```{eval=FALSE, sql connection=CRMSQL} 
+SELECT P.v3personID as 'Member ID',
+D.divisionName AS 'Division',
+DI.divisionTypeName AS "Division Type",
+P.firstName,
+PSR.personalActivityPoints as 'Activity Points',
+PSR.totalLeadershipPoints as 'Leader Points',
+PSR.ADFcardPoints as 'ADF Points',
+PSR.membershipCardPoints as 'Member Card Points',
+PSR.turnoutPoints as 'Turnout Points',
+PSR.rewardType as 'Reward Type',
+PSR.suggestedRewardLevel as 'Reward',
+PSR.numofDaysSteward,
+PSR.numOfDaysOnBrigades,
+PSR.numOfDaysOnLOA,
+a.V3accountID as 'Account Id'
+from personsRoles PR
+LEFT JOIN persons P on P.v3personID = PR.v3personID
+LEFT JOIN accounts A on PR.v3accountID = A.v3accountID
+LEFT JOIN jobs J ON P.primaryJobID = J.jobID
+LEFT JOIN statuses S on S.statusID = J.statusID
+LEFT JOIN accounts AC on AC.accountID = J.accountID  
+LEFT JOIN divisions D on AC.divisionID = D.divisionID
+LEFT JOIN divisionTypes DI ON AC.divisionTypeID = DI.divisionTypeID
+LEFT JOIN locations L on AC.locationID = L.locationID
+LEFT JOIN personsStewardRebates PSR on PSR.v3personID = P.v3personID
+WHERE PR.roleTypeID = 1
+AND (PR.statusID = 1 OR PR.dateEnd > '01-01-2023')
+AND (A.dateStop > '01/01/2023' or A.dateStop is null)
+AND PSR.rebateYear = 2023
+AND D.divisionName NOT LIKE '%615%'
+GROUP BY
+P.v3personID,
+D.divisionName,
+AC.fieldRepresentative,
+PSR.rewardType,
+P.firstName,
+P.lastName,
+PSR.personalActivityPoints,
+PSR.totalLeadershipPoints,
+PSR.ADFcardPoints,
+PSR.membershipCardPoints,
+PSR.turnoutPoints,
+PSR.rewardType,
+PSR.suggestedRewardLevel,
+PSR.numofDaysSteward,
+PSR.numOfDaysOnBrigades,
+PSR.numOfDaysOnLOA,
+L.locationName,
+a.V3accountID,
+DI.divisionTypeName,
+P.homePhone,
+P.cellPhone,
+P.email,
+S.statusName 
+ORDER BY
+D.DivisionName,
+AC.fieldRepresentative
+```
+
+**NY Commercial 2023 Steward Points, their attendance and attendance of people in their building** 
+```{r}
+StewardPoints <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Purple%20Points%20by%20steward%20(with%20their%20account%20numbers).csv")
+
+#subset just the stewards in the NY Commercial division
+StewardPoints <- StewardPoints[which(StewardPoints$Division == 'NY Commercial'),]
+
+StewardPoints$Account.Id <- as.numeric(StewardPoints$Account.Id)
+```
+
+## account info, complaints, complaint type? one hot encoding, claim types? (CRM-SQL)
+
+**SQL query (CRMprod):**
+``` {eval=FALSE, sql connection=CRMprod}
+SELECT a.accountnumber,  c.seiu32bj_claimtypename, count(c.seiu32bj_claimtypename) as 'Number of Complaints'
+FROM filteredseiu32bj_claim c
+LEFT JOIN filteredIncident i on i.incidentid = c.seiu32bj_complaint 
+LEFT JOIN FilteredAccount a ON i.seiu32bj_account = a.accountid
+LEFT JOIN Filteredseiu32bj_steward s ON a.accountid = s.seiu32bj_stewardaccountlookup
+WHERE c.createdon >= '2023-01-01 00:00:00.000' 
+AND c.createdon < '2024-01-01 00:00:00.000' 
+AND a.seiu32bj_districtname = 'New York Metro'
+AND a.seiu32bj_division = 'NY Commercial'
+AND i.customeridname != 'Test Member'
+GROUP BY  a.accountnumber, c.seiu32bj_claimtypename
+ORDER  by a.accountnumber DESC
+```
+
+**NY Commercial Total Complaints per account in 2023:**
+```{r}
+TotalComplaints <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Total%20Complaints%20Per%20Account.csv")
+
+names(TotalComplaints)[1] <- "Account.Id"
+```
+
+**NY Commercial Count of Complaint types per account in 2023:**
+```{r}
+ComplaintTypes <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Complaint%20Types%20Per%20account%20(convert%20to%20one%20hot).csv")
+```
+
+
+**NY Commercial Count of Members per account in 2023:** *i filtered out the recent 2024 hires, and made sure to include members who left in 2024, but were on the roster in 2023, i think ultimately the number is very close to just pulling the current 2024 roster today, due to most places total job count staying relatively stable*
+
+```{r}
+MemberCountAtAccounts <- read.csv("")
 ```
 
 
 
-account info, complaints, complaint type? one hot encoding, claim types? (CRM-SQL)
 
+
+
+```{r}
+#join in the total complaints for that account
+MERGED <- StewardPoints %>% left_join(TotalComplaints)
+
+# NA's to 0
+MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
+```
+
+
+
+
+
+Graph:
+
+```{r}
+ggplot(MERGED, aes(x=Number.of.Complaints, y=Leader.Points)) + 
+    geom_point()
+```
 
 
 graph on leader points vs complaints
