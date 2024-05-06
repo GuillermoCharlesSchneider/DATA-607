@@ -169,7 +169,7 @@ MERGED <- MERGED %>% left_join(MemberCountPerAccount)
 MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
 
 
-# removing the 0 members. my guess is most of these are probably flipped accounts, another company took them over mid 2023, those members still exist but in a new account for a new employer
+# removing the acccounts with 0 members. my guess is most of these are probably flipped accounts, another company took them over mid 2023, those members still exist but in a new account for a new employer, same steward
 MERGED$Members[is.na(MERGED$Members)] <- 0
 MERGED <- MERGED[which(MERGED$Members != 0),]
 
