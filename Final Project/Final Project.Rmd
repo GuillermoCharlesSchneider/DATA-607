@@ -9,10 +9,12 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(ggplot2)
+#install.packages('cowplot')
+library(cowplot)
 ```
 
 
-*My boss said i can use our internal ID's and just their first names, no identifying info. same with account and employer info.*
+*My boss said i can use our aggregated data, internal ID's, first names, no identifying info. same with account and employer info.*
 
 
 ## who our union represents:
@@ -132,37 +134,89 @@ ComplaintTypes <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSc
 
 **NY Commercial Count of Members per account in 2023:** *i filtered out the recent 2024 hires, and made sure to include members who left in 2024, but were on the roster in 2023, i think ultimately the number is very close to just pulling the current 2024 roster today, due to most places total job count staying relatively stable*
 
-```{r}
-MemberCountAtAccounts <- read.csv("")
+**SQL Query (CRMprod)
+```{eval=FALSE, sql connection=}
+SELECT DISTINCT a.V3accountID as 'Account.Id', count(a.V3accountID) as 'Members'
+FROM [dbo].[jobs] j
+LEFT JOIN accounts a on j.accountID = a.accountID
+WHERE a.divisionID = 9
+AND j.dateHired < '2024-01-01 00:00:00.000' 
+AND (j.statusID = 1 or (j.dateTerminated > '2024-01-01 00:00:00.000')) 
+AND (A.dateStop > '01/01/2023' or A.dateStop is null)
+GROUP by a.V3accountID
+ORDER by  count(a.V3accountID) DESC
 ```
 
 
-
+```{r}
+MemberCountPerAccount <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/MembersPerAccount.csv")
+```
 
 
 
 ```{r}
 #join in the total complaints for that account
 MERGED <- StewardPoints %>% left_join(TotalComplaints)
+MERGED <- MERGED %>% left_join(MemberCountPerAccount)
+
+
 
 # NA's to 0
 MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
+
+
+# removing the 0 members. my guess is most of these are probably flipped accounts, another company took them over mid 2023, those members still exist but in a new account for a new employer
+MERGED$Members[is.na(MERGED$Members)] <- 0
+MERGED <- MERGED[which(MERGED$Members != 0),]
+
+
+#year-long stewards
+MERGED <- MERGED[which(MERGED$numofDaysSteward == 365),]
 ```
 
 
+**OVERALL leadership points: Combining stewards by account. I added together the stewards for each account. bigger accounts often have multiple stewards. ** 
+```{r}
+GroupedStewards <- MERGED %>% group_by(Account.Id, Members) %>% summarise(totalComplaints = Number.of.Complaints,totalLeaderPoints = sum(Leader.Points) ,.groups = 'drop')
+GroupedStewards
+```
 
 
+Graphs:
 
-Graph:
 
 ```{r}
-ggplot(MERGED, aes(x=Number.of.Complaints, y=Leader.Points)) + 
-    geom_point()
+ggplot(MERGED, aes(x=Members, y=Number.of.Complaints)) + 
+    geom_point(alpha=0.7)+
+  geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
 ```
 
+```{r}
+CL1 <- ggplot(MERGED, aes(x=Leader.Points, y=Number.of.Complaints, size = Members)) + 
+    geom_point(alpha=0.7)
 
-graph on leader points vs complaints
+CL2 <- ggplot(GroupedStewards, aes(x=totalLeaderPoints, y=totalComplaints, size = Members)) + 
+    geom_point(alpha=0.7)
 
+plot_grid(CL1, CL2, labels = c('A', 'B'), label_size = 12)
+```
+```{r}
+ggplot(MERGED, aes(x=Activity.Points, y=Number.of.Complaints, size = Members)) + 
+    geom_point(alpha=0.7)
+
+ggplot(MERGED, aes(x=Activity.Points, y=Number.of.Complaints, size = Members)) + 
+    geom_point(alpha=0.7)
+```
+
+```{r}
+ggplot(GroupedStewards, aes(totalLeaderPoints, totalComplaints, size=Members)) +
+  geom_point() +
+  xlim(0, 15) +
+ ylim (0,15) +
+  geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
+
+ggplot(GroupedStewards, aes(x=totalLeaderPoints, y=totalComplaints
+```
 
 
 machine learning
