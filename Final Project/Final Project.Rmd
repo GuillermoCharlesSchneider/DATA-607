@@ -11,6 +11,10 @@ library(tidyverse)
 library(ggplot2)
 #install.packages('cowplot')
 library(cowplot)
+#install.packages('caret')
+library(caret)
+#install.packages("rpart.plot")
+library(rpart.plot)
 ```
 
 
@@ -169,8 +173,7 @@ MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
 MERGED$Members[is.na(MERGED$Members)] <- 0
 MERGED <- MERGED[which(MERGED$Members != 0),]
 
-
-#year-long stewards
+#keep just the year-long stewards
 MERGED <- MERGED[which(MERGED$numofDaysSteward == 365),]
 ```
 
@@ -203,9 +206,6 @@ plot_grid(CL1, CL2, labels = c('A', 'B'), label_size = 12)
 ```{r}
 ggplot(MERGED, aes(x=Activity.Points, y=Number.of.Complaints, size = Members)) + 
     geom_point(alpha=0.7)
-
-ggplot(MERGED, aes(x=Activity.Points, y=Number.of.Complaints, size = Members)) + 
-    geom_point(alpha=0.7)
 ```
 
 ```{r}
@@ -215,13 +215,32 @@ ggplot(GroupedStewards, aes(totalLeaderPoints, totalComplaints, size=Members)) +
  ylim (0,15) +
   geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
 
-ggplot(GroupedStewards, aes(x=totalLeaderPoints, y=totalComplaints
 ```
 
 
-machine learning
+machine learning -- decision tree
 
+```{r}
+tc <- trainControl(method = "LOOCV")
 
+m <- train(Number.of.Complaints ~ Leader.Points + Activity.Points + Members,
+           data = MERGED,
+           trControl = tc,
+           method = "rpart",
+           tuneGrid = expand.grid(cp = 0))
+```
+
+```{r}
+prp(m$finalModel)
+
+prp(m$finalModel,
+    box.palette = "RdBu",
+    shadow.col = "gray",
+    nn = TRUE,
+    type = 3,
+    extra = 1,
+    cex = 0.5)
+```
 
 
 
