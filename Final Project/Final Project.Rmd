@@ -99,7 +99,7 @@ AC.fieldRepresentative
 ```{r}
 StewardPoints <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Purple%20Points%20by%20steward%20(with%20their%20account%20numbers).csv")
 
-#subset just the stewards in the NY Commercial division
+#subset just the stewards in the NY Commercial division (no LOA complaints)
 StewardPoints <- StewardPoints[which(StewardPoints$Division == 'NY Commercial'),]
 
 StewardPoints$Account.Id <- as.numeric(StewardPoints$Account.Id)
@@ -128,17 +128,23 @@ ORDER  by a.accountnumber DESC
 TotalComplaints <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Total%20Complaints%20Per%20Account.csv")
 
 names(TotalComplaints)[1] <- "Account.Id"
+
+#remove blanks columns?
+TotalComplaints <- TotalComplaints[ -c(3:5) ]
+
 ```
 
 **NY Commercial Count of Complaint types per account in 2023:**
 ```{r}
 ComplaintTypes <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/Complaint%20Types%20Per%20account%20(convert%20to%20one%20hot).csv")
+
+ComplaintTypes <- ComplaintTypes[which(ComplaintTypes$seiu32bj_claimtypename != 'Leave of Absence'),]
 ```
 
 
 **NY Commercial Count of Members per account in 2023:** *i filtered out the recent 2024 hires, and made sure to include members who left in 2024, but were on the roster in 2023, i think ultimately the number is very close to just pulling the current 2024 roster today, due to most places total job count staying relatively stable*
 
-**SQL Query (CRMprod)
+**SQL Query (CRMprod)**
 ```{eval=FALSE, sql connection=}
 SELECT DISTINCT a.V3accountID as 'Account.Id', count(a.V3accountID) as 'Members'
 FROM [dbo].[jobs] j
@@ -157,30 +163,37 @@ MemberCountPerAccount <- read.csv("https://raw.githubusercontent.com/GuillermoCh
 ```
 
 
-
+**Cleaning:**
 ```{r}
 #join in the total complaints for that account
 MERGED <- StewardPoints %>% left_join(TotalComplaints)
 MERGED <- MERGED %>% left_join(MemberCountPerAccount)
 
-
-
 # NA's to 0
+MERGED$EVT[is.na(MERGED$EVT)] <- 0
+MERGED$FT[is.na(MERGED$FT)] <- 0
+MERGED$PT[is.na(MERGED$PT)] <- 0
+MERGED$Total[is.na(MERGED$Total)] <- 0
 MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
 
-
 # removing the acccounts with 0 members. my guess is most of these are probably flipped accounts, another company took them over mid 2023, those members still exist but in a new account for a new employer, same steward
-MERGED$Members[is.na(MERGED$Members)] <- 0
-MERGED <- MERGED[which(MERGED$Members != 0),]
+MERGED <- MERGED[which(MERGED$Total != 0),]
 
 #keep just the year-long stewards
 MERGED <- MERGED[which(MERGED$numofDaysSteward == 365),]
+
+#remove the EVT workers
+MERGED <- MERGED[which(MERGED$EVT == 0),]
+
+#add a new column of complaint rate, complaints / total members
+#MERGED <- MERGED
+
 ```
 
 
 **OVERALL leadership points: Combining stewards by account. I added together the stewards for each account. bigger accounts often have multiple stewards. ** 
 ```{r}
-GroupedStewards <- MERGED %>% group_by(Account.Id, Members) %>% summarise(totalComplaints = Number.of.Complaints,totalLeaderPoints = sum(Leader.Points) ,.groups = 'drop')
+GroupedStewards <- MERGED %>% group_by(Account.Id, Total) %>% summarise(totalComplaints = Number.of.Complaints,totalLeaderPoints = sum(Leader.Points) ,.groups = 'drop')
 GroupedStewards
 ```
 
@@ -189,7 +202,7 @@ Graphs:
 
 
 ```{r}
-ggplot(MERGED, aes(x=Members, y=Number.of.Complaints)) + 
+ggplot(MERGED, aes(x=Total, y=Number.of.Complaints)) + 
     geom_point(alpha=0.7)+
   geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
 ```
@@ -205,17 +218,20 @@ plot_grid(CL1, CL2, labels = c('A', 'B'), label_size = 12)
 ```
 ```{r}
 ggplot(MERGED, aes(x=Activity.Points, y=Number.of.Complaints, size = Members)) + 
-    geom_point(alpha=0.7)
+    geom_point(alpha=0.7)+
+  geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
 ```
 
 ```{r}
 ggplot(GroupedStewards, aes(totalLeaderPoints, totalComplaints, size=Members)) +
   geom_point() +
-  xlim(0, 15) +
  ylim (0,15) +
-  geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
+  xlim (0,15) 
 
 ```
+
+
+
 
 
 machine learning -- decision tree
@@ -223,15 +239,23 @@ machine learning -- decision tree
 ```{r}
 tc <- trainControl(method = "LOOCV")
 
-m <- train(Number.of.Complaints ~ Leader.Points + Activity.Points + Members,
+m <- train(Number.of.Complaints ~ Turnout.Points + Activity.Points + FT + PT + Total,
            data = MERGED,
            trControl = tc,
            method = "rpart",
            tuneGrid = expand.grid(cp = 0))
+
+m2 <- train(Number.of.Complaints ~ FT + PT + Total,
+           data = MERGED,
+           trControl = tc,
+           method = "rpart",
+           tuneGrid = expand.grid(cp = 0))
+
 ```
 
 ```{r}
 prp(m$finalModel)
+prp(m2$finalModel)
 
 prp(m$finalModel,
     box.palette = "RdBu",
