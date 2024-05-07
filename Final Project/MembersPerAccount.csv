@@ -1,4 +1,4 @@
-Account.Id,EVT,FT,PT,Total
+Account.Id,EVTMembers,FTMembers,PTMembers,TotalMembers
 39786,338,0,0,338
 46033,0,0,269,269
 46878,263,0,1,264
