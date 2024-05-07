@@ -129,8 +129,11 @@ TotalComplaints <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesS
 
 names(TotalComplaints)[1] <- "Account.Id"
 
-#remove blanks columns?
-TotalComplaints <- TotalComplaints[ -c(3:5) ]
+#account id 
+TotalComplaints$Account.Id <- as.numeric(TotalComplaints$Account.Id)
+
+#remove complaints from EVENT, NULL, and NA job type workers
+#TotalComplaints <- TotalComplaints[ -c(5,6,7) ]
 
 ```
 
@@ -170,30 +173,33 @@ MERGED <- StewardPoints %>% left_join(TotalComplaints)
 MERGED <- MERGED %>% left_join(MemberCountPerAccount)
 
 # NA's to 0
-MERGED$EVT[is.na(MERGED$EVT)] <- 0
-MERGED$FT[is.na(MERGED$FT)] <- 0
-MERGED$PT[is.na(MERGED$PT)] <- 0
-MERGED$Total[is.na(MERGED$Total)] <- 0
-MERGED$Number.of.Complaints[is.na(MERGED$Number.of.Complaints)] <- 0
+MERGED$FTComplaints[is.na(MERGED$FTComplaints)] <- 0
+MERGED$PTComplaints[is.na(MERGED$PTComplaints)] <- 0
+MERGED$TotalComplaints[is.na(MERGED$TotalComplaints)] <- 0
+MERGED$EVTMembers[is.na(MERGED$EVTMembers)] <- 0
+MERGED$FTMembers[is.na(MERGED$FTMembers)] <- 0
+MERGED$PTMembers[is.na(MERGED$PTMembers)] <- 0
+MERGED$TotalMembers[is.na(MERGED$TotalMembers)] <- 0
 
 # removing the acccounts with 0 members. my guess is most of these are probably flipped accounts, another company took them over mid 2023, those members still exist but in a new account for a new employer, same steward
-MERGED <- MERGED[which(MERGED$Total != 0),]
+MERGED <- MERGED[which(MERGED$TotalMembers != 0),]
 
 #keep just the year-long stewards
 MERGED <- MERGED[which(MERGED$numofDaysSteward == 365),]
 
-#remove the EVT workers
-MERGED <- MERGED[which(MERGED$EVT == 0),]
+#removed the EVT workers. only 4 accounts, huge amounts of rotating temp workers, lots of complaints, no long relationship w/ their steward
+MERGED <- MERGED[which(MERGED$EVTMembers == 0),]
 
 #add a new column of complaint rate, complaints / total members
 #MERGED <- MERGED
+MERGED$ComplaintRate <- MERGED$TotalComplaints / MERGED$TotalMembers * 100
 
 ```
 
 
 **OVERALL leadership points: Combining stewards by account. I added together the stewards for each account. bigger accounts often have multiple stewards. ** 
 ```{r}
-GroupedStewards <- MERGED %>% group_by(Account.Id, Total) %>% summarise(totalComplaints = Number.of.Complaints,totalLeaderPoints = sum(Leader.Points) ,.groups = 'drop')
+GroupedStewards <- MERGED %>% group_by(Account.Id, FT,PT,EVT, Total, Number.of.Complaints) %>% summarise(totalLeaderPoints = sum(Leader.Points) ,.groups = 'drop')
 GroupedStewards
 ```
 
@@ -202,16 +208,16 @@ Graphs:
 
 
 ```{r}
-ggplot(MERGED, aes(x=Total, y=Number.of.Complaints)) + 
+ggplot(MERGED, aes(x=FT, y=Number.of.Complaints)) + 
     geom_point(alpha=0.7)+
   geom_smooth(method=lm , color="lightblue", fill="#69b3a2", se=TRUE) 
 ```
 
 ```{r}
-CL1 <- ggplot(MERGED, aes(x=Leader.Points, y=Number.of.Complaints, size = Members)) + 
+CL1 <- ggplot(MERGED, aes(x=Leader.Points, y=Number.of.Complaints, size = Total)) + 
     geom_point(alpha=0.7)
 
-CL2 <- ggplot(GroupedStewards, aes(x=totalLeaderPoints, y=totalComplaints, size = Members)) + 
+CL2 <- ggplot(GroupedStewards, aes(x=totalLeaderPoints, y=totalComplaints, size = Total)) + 
     geom_point(alpha=0.7)
 
 plot_grid(CL1, CL2, labels = c('A', 'B'), label_size = 12)
