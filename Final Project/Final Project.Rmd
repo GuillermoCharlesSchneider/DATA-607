@@ -160,7 +160,7 @@ GROUP by a.V3accountID
 ORDER by  count(a.V3accountID) DESC
 ```
 
-
+**MemberCountPerAccount**
 ```{r}
 MemberCountPerAccount <- read.csv("https://raw.githubusercontent.com/GuillermoCharlesSchneider/DATA-607/main/Final%20Project/MembersPerAccount.csv")
 ```
@@ -199,6 +199,8 @@ MERGED$ComplaintRate <- MERGED$TotalComplaints / MERGED$TotalAverageMembers * 10
 
 ```
 
+**Total AVERAGE Member count variable:**
+This is to account for turnover through the year. Take all the members who worked at location in 2023, Sum the Number of days worked by each employee, and divide by 365. This gives you a approximate "average roster size" for throughout all of 2023. Each member needs to be included, because each member has a opportunity to file a complaint while they work and are represented by the union, regardless of how short their work length was
 
 **OVERALL leadership points: Combining stewards by account. I added together the stewards for each account. bigger accounts often have multiple stewards. ** 
 ```{r}
@@ -207,11 +209,9 @@ GroupedStewards <- MERGED %>% group_by(Account.Id, FTComplaints,PTComplaints,Tot
 GroupedStewards
 ```
 
-**Total AVERAGE Member is the  at a specific account / 365. 
 
-This is to account for turnover. Take all the members who worked at location in 2023, Sum the Number of days worked by each employee, and divide by 365. This gives you a approximate "average roster size" for throughout all of 2023. Each member needs to be included, because each member has a oppurtunity to file a complaint while they work and are represented by the union, regardless of how short their work length
 
-Graphs:
+## Graphs:
 **There are 4 big accounts that are outside 100 members, but most of the accounts fall between this range i set up to easier visualize**
 ```{r}
 ggplot(MERGED, aes(x=TotalAverageMembers, y=TotalComplaints)) + 
@@ -256,16 +256,6 @@ ggplot(MERGED, aes(x=Turnout.Points, y=ComplaintRate, size=TotalAverageMembers))
 
 
 
-```{r}
-ggplot(GroupedStewards, aes(totalLeaderPoints, totalComplaints, size=Members)) +
-  geom_point() +
- ylim (0,15) +
-  xlim (0,15) 
-
-```
-
-
-
 
 
 ## machine learning -- decision tree
@@ -289,6 +279,12 @@ m2 <- train(ComplaintRate ~ totalActivityPoints + totalTurnoutPoints + FTAverage
 
 ```
 
+
+```{r}
+m
+```
+
+
 ```{r}
 prp(m$finalModel)
 
@@ -298,8 +294,12 @@ prp(m$finalModel,
     nn = TRUE,
     type =3,
     extra = 1,
-    cex = 0.5)
+    cex = 0.5,
+    compress=TRUE,
+    fallen.leaves = TRUE)
 ```
+
+**Trying instead with grouped stewards**
 ```{r}
 prp(m2$finalModel)
 
@@ -313,6 +313,18 @@ prp(m2$finalModel,
     compress=TRUE,
     fallen.leaves = TRUE)
 ```
+## ACTUAL vs PREDICTED
+```{r}
+actualAndPredictedData = data.frame(Account.Id = MERGED$Account.Id, StewardName = MERGED$firstName, Steward.Id = MERGED$Member.ID, actualValue = MERGED$ComplaintRate, 
+                                    predictedValue = predict(m,MERGED))
 
+ggplot(actualAndPredictedData,aes(x = actualValue, y = predictedValue)) +
+ylim(0,200)+
+xlim(0,250)+
+geom_point()
+
+#write.csv(actualAndPredictedData, "actualAndPredictedData.csv")
+
+```
 
 

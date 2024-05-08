@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1182019/161056e3d50c454fa605c1cf53abb457
+bundleId: https://api.rpubs.com/api/v1/document/1182019/161056e3d50c454fa605c1cf53abb457
+url: http://rpubs.com/guillermoschneider/1182019
+version: 1
